@@ -201,6 +201,28 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    .load-more-btn {
+      width: 100%;
+      padding: 14px;
+      margin-top: 16px;
+      background: var(--card-bg);
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .load-more-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+    .load-more-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
     .total-info {
       text-align: center;
       font-size: 12px;
@@ -244,23 +266,24 @@
     <div class="loading-spinner"></div>
     데이터 로딩 중...
   </div>
+  <button class="load-more-btn" id="loadMoreBtn" style="display:none" onclick="loadMore()">
+    더보기
+  </button>
 </main>
 
 <script>
-  const CATEGORY_EMOJI = {
-    outdoor: { sunny: '☀️', cloudy: '⛅', rainy: '🌧️' },
-    indoor:  { sunny: '🏛️', cloudy: '🏛️', rainy: '🏛️' },
-  };
   const PLACE_EMOJI = {
     '자연': '🌿', '산책': '🚶', '역사': '🏯', '해변': '🏖️',
     '온천': '♨️', '캠핑': '⛺', '사진맛집': '📸', '축제': '🎉',
-    '맛집': '🍽️', '레저': '🎯', '전시': '🖼️',
+    '맛집': '🍽️', '레저': '🎯', '전시': '🖼️', '카페': '☕',
   };
 
+  const PAGE_SIZE = 8;
+  let allRecs = [];
+  let shownCount = 0;
+
   function getPlaceEmoji(tags) {
-    for (const t of tags) {
-      if (PLACE_EMOJI[t]) return PLACE_EMOJI[t];
-    }
+    for (const t of tags) if (PLACE_EMOJI[t]) return PLACE_EMOJI[t];
     return '📍';
   }
 
@@ -272,7 +295,7 @@
   }
 
   function renderWeather(w) {
-    const skyMap = { 1: '맑음 ☀️', 3: '구름많음 ⛅', 4: '흐림 ☁️' };
+    const skyMap  = { 1: '맑음 ☀️', 3: '구름많음 ⛅', 4: '흐림 ☁️' };
     const dustMap = { 1: '좋음', 2: '보통', 3: '나쁨 😷', 4: '매우나쁨 🚫' };
     document.getElementById('weatherBar').innerHTML = `
       <div class="weather-item">
@@ -290,8 +313,7 @@
       <div class="weather-item">
         <span class="weather-val" style="font-size:14px">${dustMap[w.dust] || '보통'}</span>
         <span class="weather-lbl">미세먼지</span>
-      </div>
-    `;
+      </div>`;
   }
 
   function renderScores(scores, total) {
@@ -310,42 +332,68 @@
           <div class="lbl">실내 적합</div>
         </div>
       </div>
-      <div class="total-info">${total}곳 분석 완료</div>
-    `;
+      <div class="total-info">${total}곳 분석 완료</div>`;
   }
 
-  function renderCards(recs) {
-    if (!recs.length) {
+  function makeCard(d, rank) {
+    const tags = d.tags.slice(0, 4).map(t => `<span class="tag">#${t}</span>`).join('');
+    const km   = d.distance_km >= 0 ? `${d.distance_km}km` : '';
+    const img  = d.image
+      ? `<img class="card-img" src="${d.image}" alt="${d.name}" loading="lazy" onerror="this.outerHTML='<div class=card-img-placeholder>${getPlaceEmoji(d.tags)}</div>'">`
+      : `<div class="card-img-placeholder">${getPlaceEmoji(d.tags)}</div>`;
+    return `
+      <div class="card">
+        ${img}
+        <div class="card-body">
+          <div class="card-rank">TOP ${rank}</div>
+          <div class="card-name">${d.name}</div>
+          <div class="card-addr">${d.address}</div>
+          <div class="card-scores">
+            <span class="score-badge">날씨 ${Math.round(d.weather_score * 100)}점</span>
+            <span class="score-badge">거리 ${km}</span>
+            <span class="score-badge">종합 ${Math.round(d.score * 100)}점</span>
+          </div>
+          <div class="card-tags">${tags}</div>
+          <div class="card-copy">${d.copy}</div>
+        </div>
+      </div>`;
+  }
+
+  function renderInitial() {
+    if (!allRecs.length) {
       document.getElementById('cards').innerHTML = '<div class="loading">추천 장소가 없습니다.</div>';
+      document.getElementById('loadMoreBtn').style.display = 'none';
       return;
     }
-    document.getElementById('cards').innerHTML = recs.map((d, i) => {
-      const tags = d.tags.slice(0, 4).map(t => `<span class="tag">#${t}</span>`).join('');
-      const km   = d.distance_km >= 0 ? `${d.distance_km}km` : '';
-      const img  = d.image
-        ? `<img class="card-img" src="${d.image}" alt="${d.name}" loading="lazy" onerror="this.outerHTML='<div class=card-img-placeholder>${getPlaceEmoji(d.tags)}</div>'">`
-        : `<div class="card-img-placeholder">${getPlaceEmoji(d.tags)}</div>`;
-      return `
-        <div class="card">
-          ${img}
-          <div class="card-body">
-            <div class="card-rank">TOP ${i + 1}</div>
-            <div class="card-name">${d.name}</div>
-            <div class="card-addr">${d.address}</div>
-            <div class="card-scores">
-              <span class="score-badge">날씨 ${Math.round(d.weather_score * 100)}점</span>
-              <span class="score-badge">거리 ${km}</span>
-              <span class="score-badge">종합 ${Math.round(d.score * 100)}점</span>
-            </div>
-            <div class="card-tags">${tags}</div>
-            <div class="card-copy">${d.copy}</div>
-          </div>
-        </div>`;
-    }).join('');
+    shownCount = Math.min(PAGE_SIZE, allRecs.length);
+    document.getElementById('cards').innerHTML =
+      allRecs.slice(0, shownCount).map((d, i) => makeCard(d, i + 1)).join('');
+    updateLoadMoreBtn();
+  }
+
+  function loadMore() {
+    const next = Math.min(shownCount + PAGE_SIZE, allRecs.length);
+    const newCards = allRecs.slice(shownCount, next).map((d, i) => makeCard(d, shownCount + i + 1)).join('');
+    document.getElementById('cards').insertAdjacentHTML('beforeend', newCards);
+    shownCount = next;
+    updateLoadMoreBtn();
+  }
+
+  function updateLoadMoreBtn() {
+    const btn = document.getElementById('loadMoreBtn');
+    if (shownCount >= allRecs.length) {
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = 'block';
+      btn.textContent = `더보기 (${shownCount}/${allRecs.length}개 표시 중)`;
+    }
   }
 
   async function load() {
     const city = document.getElementById('citySelect').value;
+    allRecs = [];
+    shownCount = 0;
+    document.getElementById('loadMoreBtn').style.display = 'none';
     document.getElementById('cards').innerHTML = `
       <div class="loading">
         <div class="loading-spinner"></div>
@@ -354,12 +402,13 @@
     document.getElementById('scoreSection').innerHTML = '';
 
     try {
-      const res  = await fetch(`/api/recommend?city=${encodeURIComponent(city)}&top_n=8`);
+      const res  = await fetch(`/api/recommend?city=${encodeURIComponent(city)}&top_n=40`);
       const data = await res.json();
       applyTheme(data.weather.sky, data.weather.precip_prob);
       renderWeather(data.weather);
       renderScores(data.scores, data.total_fetched);
-      renderCards(data.recommendations);
+      allRecs = data.recommendations;
+      renderInitial();
     } catch (e) {
       document.getElementById('cards').innerHTML = `<div class="loading">오류 발생: ${e.message}</div>`;
     }
