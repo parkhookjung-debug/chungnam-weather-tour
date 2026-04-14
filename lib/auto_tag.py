@@ -80,18 +80,35 @@ CONTENT_TYPE_OVERRIDE = {
     },
 }
 
-# cat3 기반 세부 보정 (특별한 장소만)
+# cat3 기반 세부 보정 — 충남 실제 등장 코드 기준
 CAT3_BONUS = {
-    "A01010400": {"tags": ["등산", "산"], "golden_hour_bonus": False},           # 산
-    "A01010500": {"tags": ["하천", "산책로"], "golden_hour_bonus": True},         # 하천/강
-    "A01010900": {"tags": ["계곡", "물놀이"], "golden_hour_bonus": False},        # 계곡
-    "A01011200": {"tags": ["해수욕장", "바다", "여름"], "golden_hour_bonus": True},# 해수욕장
-    "A01011400": {"tags": ["섬", "바다"], "golden_hour_bonus": True},             # 섬
-    "A01011600": {"tags": ["일출", "일몰", "사진맛집"], "golden_hour_bonus": True},# 전망대
-    "A02010100": {"tags": ["성곽", "역사"], "golden_hour_bonus": True},           # 고궁/성
-    "A02010200": {"tags": ["사찰", "힐링"], "golden_hour_bonus": False},          # 사찰
-    "A02030200": {"tags": ["체험", "농촌"], "golden_hour_bonus": False},          # 농촌체험
-    "A03021700": {"tags": ["캠핑", "야외"], "golden_hour_bonus": False},          # 캠핑장
+    # 자연
+    "A01010400": {"tags": ["등산", "산", "힐링"],              "golden_hour_bonus": False},
+    "A01010500": {"tags": ["하천", "산책로", "사진맛집"],       "golden_hour_bonus": True},
+    "A01010900": {"tags": ["계곡", "물놀이", "여름"],           "golden_hour_bonus": False},
+    "A01011200": {"tags": ["해수욕장", "바다", "여름"],         "golden_hour_bonus": True},
+    "A01011400": {"tags": ["섬", "바다", "드라이브"],           "golden_hour_bonus": True},
+    "A01011600": {"tags": ["전망대", "사진맛집", "일몰"],       "golden_hour_bonus": True},
+    "A01011800": {"tags": ["생태", "자연", "산책"],             "golden_hour_bonus": False},
+    # 인문/역사
+    "A02010100": {"tags": ["성곽", "역사", "사진맛집"],         "golden_hour_bonus": True},
+    "A02010700": {"tags": ["사찰", "힐링", "산책"],             "golden_hour_bonus": False},
+    "A02010800": {"tags": ["고건축", "역사", "전통"],           "golden_hour_bonus": False},
+    "A02020700": {"tags": ["전시", "문화", "실내"],             "golden_hour_bonus": False},
+    "A02030100": {"tags": ["농촌체험", "가족", "체험"],         "golden_hour_bonus": False},
+    "A02030400": {"tags": ["산업관광", "체험"],                 "golden_hour_bonus": False},
+    "A02050200": {"tags": ["미술관", "전시", "실내"],           "golden_hour_bonus": False},
+    "A02070200": {"tags": ["테마파크", "가족", "놀이"],         "golden_hour_bonus": False},
+    # 레저
+    "A03021700": {"tags": ["캠핑", "야외", "자연"],             "golden_hour_bonus": False},
+    "A03030500": {"tags": ["레저", "액티비티", "야외"],         "golden_hour_bonus": False},
+    # 음식
+    "A05020100": {"tags": ["한식", "맛집"],                     "golden_hour_bonus": False},
+    "A05020400": {"tags": ["분식", "맛집"],                     "golden_hour_bonus": False},
+    "A05020900": {"tags": ["카페", "디저트", "테라스"],         "golden_hour_bonus": True},
+    # 코스
+    "C01120001": {"tags": ["드라이브", "코스", "사진맛집"],     "golden_hour_bonus": True},
+    "C01140001": {"tags": ["드라이브", "코스"],                 "golden_hour_bonus": False},
 }
 
 # 추천 카피 템플릿
