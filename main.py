@@ -4,6 +4,7 @@
 실행: uvicorn main:app --reload
 """
 import sys
+import os
 import asyncio
 import traceback
 sys.path.insert(0, ".")
@@ -16,28 +17,14 @@ from lib.recommend import match_from_api
 
 app = FastAPI(title="충남 날씨 관광 추천")
 
-# React 빌드 결과물 서빙 (frontend/dist 우선, 없으면 기존 static)
-import os
 FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 STATIC_DIR    = os.path.join(os.path.dirname(__file__), "static")
 
 if os.path.isdir(FRONTEND_DIST):
     app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
 
-def _index():
-    if os.path.isdir(FRONTEND_DIST):
-        return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
-    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
-@app.get("/")
-async def root():
-    return _index()
-
-# SPA fallback: /api/* 이외의 모든 경로에서 index.html 반환
-@app.get("/{full_path:path}")
-async def spa_fallback(full_path: str):
-    return _index()
-
+# ── API 라우트 (캐치올보다 반드시 먼저) ──────────────────────────────
 
 @app.get("/api/recommend")
 async def recommend(
@@ -49,7 +36,6 @@ async def recommend(
     try:
         loop = asyncio.get_event_loop()
 
-        # 블로킹 함수를 스레드풀에서 실행 (async 충돌 방지)
         weather = await loop.run_in_executor(
             None, fetch_weather, city if city != "전체" else "아산"
         )
@@ -79,3 +65,19 @@ async def recommend(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── 프론트엔드 서빙 (항상 마지막에) ─────────────────────────────────
+
+def _index():
+    if os.path.isdir(FRONTEND_DIST):
+        return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+@app.get("/")
+async def root():
+    return _index()
+
+@app.get("/{full_path:path}")
+async def spa_fallback(full_path: str):
+    return _index()
