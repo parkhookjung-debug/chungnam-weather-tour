@@ -130,10 +130,13 @@ def fetch_and_tag(city: str = "전체", num: int = 100) -> list:
         else:
             result.append(tagged)
 
-    # 수동 데이터 중 TourAPI에 없는 것도 추가
+    # 수동 데이터 중 TourAPI에 없는 것도 추가 (도시 필터 적용)
     api_names = {d["name"] for d in result}
     for name, dest in manual.items():
         if name not in api_names:
+            # 특정 도시 선택 시 해당 도시 수동 데이터만 추가
+            if city != "전체" and dest.get("city") and dest["city"] != city:
+                continue
             dest = dest.copy()
             dest["source"] = "manual"
             result.append(dest)
