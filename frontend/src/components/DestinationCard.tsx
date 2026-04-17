@@ -1,28 +1,40 @@
 import { useState } from 'react'
-import { MapPin, Star } from 'lucide-react'
+import { MapPin, Star, ChevronRight } from 'lucide-react'
 import { getPlaceEmoji } from '@/lib/weather'
 import type { Destination } from '@/types'
 
 interface Props {
   destination: Destination
   rank: number
+  onNextCourse?: (d: Destination) => void
+  isSelected?: boolean
 }
 
-export default function DestinationCard({ destination: d, rank }: Props) {
+export default function DestinationCard({ destination: d, rank, onNextCourse, isSelected }: Props) {
   const isFeatured = rank === 1
   return isFeatured
-    ? <FeaturedCard destination={d} />
-    : <CompactCard destination={d} rank={rank} />
+    ? <FeaturedCard destination={d} onNextCourse={onNextCourse} isSelected={isSelected} />
+    : <CompactCard destination={d} rank={rank} onNextCourse={onNextCourse} isSelected={isSelected} />
 }
 
 /* ── 1위: 큰 히어로 카드 ─────────────────────────────────────────── */
-function FeaturedCard({ destination: d }: { destination: Destination }) {
+function FeaturedCard({
+  destination: d,
+  onNextCourse,
+  isSelected,
+}: {
+  destination: Destination
+  onNextCourse?: (d: Destination) => void
+  isSelected?: boolean
+}) {
   const [imgError, setImgError] = useState(false)
   const emoji = getPlaceEmoji(d.tags)
   const score = Math.round(d.score * 100)
 
   return (
-    <div className="relative rounded-3xl overflow-hidden shadow-lg mb-2 active:scale-[0.99] transition-transform">
+    <div className={`relative rounded-3xl overflow-hidden shadow-lg mb-2 transition-all ${
+      isSelected ? 'ring-2 ring-primary' : 'active:scale-[0.99]'
+    }`}>
       {/* 배경 이미지 */}
       {d.image && !imgError ? (
         <img
@@ -62,24 +74,49 @@ function FeaturedCard({ destination: d }: { destination: Destination }) {
           ))}
         </div>
         <h2 className="text-xl font-bold leading-tight mb-1">{d.name}</h2>
-        <div className="flex items-center gap-1 text-xs opacity-80 mb-2">
+        <div className="flex items-center gap-1 text-xs opacity-80 mb-3">
           <MapPin className="w-3 h-3" />
           {d.address}
         </div>
-        <p className="text-xs opacity-75 leading-relaxed line-clamp-2">{d.copy}</p>
+        <p className="text-xs opacity-75 leading-relaxed line-clamp-2 mb-3">{d.copy}</p>
+
+        {/* 다음 코스 버튼 */}
+        {onNextCourse && (
+          <button
+            onClick={() => onNextCourse(d)}
+            className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm
+                       border border-white/30 text-white text-xs font-semibold
+                       px-3 py-1.5 rounded-full transition-colors"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+            다음 코스 추천
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
 /* ── 2위~: 가로형 컴팩트 카드 ────────────────────────────────────── */
-function CompactCard({ destination: d, rank }: { destination: Destination; rank: number }) {
+function CompactCard({
+  destination: d,
+  rank,
+  onNextCourse,
+  isSelected,
+}: {
+  destination: Destination
+  rank: number
+  onNextCourse?: (d: Destination) => void
+  isSelected?: boolean
+}) {
   const [imgError, setImgError] = useState(false)
   const emoji = getPlaceEmoji(d.tags)
   const score = Math.round(d.score * 100)
 
   return (
-    <div className="flex gap-3 bg-white rounded-2xl shadow-sm overflow-hidden active:scale-[0.99] transition-transform border border-border/50">
+    <div className={`flex gap-3 bg-white rounded-2xl shadow-sm overflow-hidden transition-all border ${
+      isSelected ? 'border-primary ring-1 ring-primary' : 'border-border/50 active:scale-[0.99]'
+    }`}>
       {/* 썸네일 */}
       <div className="relative flex-shrink-0 w-28 h-28">
         {d.image && !imgError ? (
@@ -111,15 +148,28 @@ function CompactCard({ destination: d, rank }: { destination: Destination; rank:
           <MapPin className="w-3 h-3 flex-shrink-0" />
           <span className="line-clamp-1">{d.address}</span>
         </div>
-        <div className="flex flex-wrap gap-1">
-          {d.tags.slice(0, 3).map(tag => (
-            <span
-              key={tag}
-              className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full"
+        <div className="flex items-center justify-between">
+          <div className="flex flex-wrap gap-1">
+            {d.tags.slice(0, 2).map(tag => (
+              <span
+                key={tag}
+                className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+          {/* 다음 코스 버튼 */}
+          {onNextCourse && (
+            <button
+              onClick={() => onNextCourse(d)}
+              className="flex items-center gap-0.5 text-[11px] text-primary font-semibold
+                         hover:underline flex-shrink-0"
             >
-              #{tag}
-            </span>
-          ))}
+              다음 코스
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          )}
         </div>
       </div>
     </div>

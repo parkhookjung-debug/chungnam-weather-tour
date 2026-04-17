@@ -21,6 +21,20 @@ export interface Destination {
   distance_km: number
   image?: string
   copy: string
+  category?: string
+  coords?: { lat: number; lng: number }
+}
+
+export interface NextPlace {
+  name: string
+  address: string
+  rating: number
+  review_count: number
+  open_now: boolean | null
+  photo_url: string | null
+  types: string[]
+  lat: number
+  lng: number
 }
 
 export interface RecommendResponse {

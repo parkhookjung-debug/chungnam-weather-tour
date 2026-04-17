@@ -4,7 +4,9 @@ import WeatherHeader from '@/components/WeatherHeader'
 import ScoreBar from '@/components/ScoreBar'
 import DestinationCard from '@/components/DestinationCard'
 import CardSkeleton from '@/components/CardSkeleton'
+import CoursePanel from '@/components/CoursePanel'
 import { useRecommend } from '@/hooks/useRecommend'
+import { useCourse } from '@/hooks/useCourse'
 import { getTheme } from '@/lib/weather'
 import type { Destination } from '@/types'
 
@@ -19,7 +21,9 @@ const THEME_BG: Record<string, string> = {
 export default function App() {
   const [city, setCity] = useState('전체')
   const [shown, setShown] = useState<Destination[]>([])
+  const [selectedDest, setSelectedDest] = useState<Destination | null>(null)
   const { data, loading, error, fetch } = useRecommend()
+  const course = useCourse()
 
   useEffect(() => { fetch(city) }, [city, fetch])
   useEffect(() => {
@@ -32,11 +36,31 @@ export default function App() {
     if (!next) return
     setCity(next)
     setShown([])
+    setSelectedDest(null)
+    course.clear()
   }
 
   function loadMore() {
     if (!data) return
     setShown(data.recommendations.slice(0, shown.length + PAGE_SIZE))
+  }
+
+  function handleNextCourse(dest: Destination) {
+    if (selectedDest?.name === dest.name) {
+      setSelectedDest(null)
+      course.clear()
+      return
+    }
+    setSelectedDest(dest)
+    const coords = (dest as any).coords
+    if (coords) {
+      course.fetch(coords.lat, coords.lng, (dest as any).category ?? 'outdoor')
+    }
+  }
+
+  function handleCourseClose() {
+    setSelectedDest(null)
+    course.clear()
   }
 
   return (
@@ -49,7 +73,7 @@ export default function App() {
         onCityChange={handleCityChange}
       />
 
-      {/* 점수 게이지 바 (헤더 바로 아래, sticky) */}
+      {/* 점수 게이지 바 */}
       {data && !loading && (
         <div className="sticky top-0 z-10">
           <ScoreBar scores={data.scores} total={data.total_fetched} />
@@ -81,13 +105,39 @@ export default function App() {
         ) : (
           <>
             {/* 1위 피처드 카드 */}
-            <DestinationCard destination={shown[0]} rank={1} />
+            <DestinationCard
+              destination={shown[0]}
+              rank={1}
+              onNextCourse={handleNextCourse}
+              isSelected={selectedDest?.name === shown[0].name}
+            />
+            {selectedDest?.name === shown[0].name && (
+              <CoursePanel
+                places={course.places}
+                loading={course.loading}
+                onClose={handleCourseClose}
+              />
+            )}
 
             {/* 2위~ 컴팩트 카드 */}
             {shown.length > 1 && (
               <div className="flex flex-col gap-3">
                 {shown.slice(1).map((d, i) => (
-                  <DestinationCard key={d.name} destination={d} rank={i + 2} />
+                  <div key={d.name}>
+                    <DestinationCard
+                      destination={d}
+                      rank={i + 2}
+                      onNextCourse={handleNextCourse}
+                      isSelected={selectedDest?.name === d.name}
+                    />
+                    {selectedDest?.name === d.name && (
+                      <CoursePanel
+                        places={course.places}
+                        loading={course.loading}
+                        onClose={handleCourseClose}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             )}

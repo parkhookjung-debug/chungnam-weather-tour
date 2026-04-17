@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from lib.weather import fetch_weather
 from lib.recommend import match_from_api
+from lib.places import fetch_next_places
 
 app = FastAPI(title="충남 날씨 관광 추천")
 
@@ -62,6 +63,26 @@ async def recommend(
             "recommendations": result["recommendations"],
         }
 
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/course")
+async def course(
+    lat: float = Query(...),
+    lng: float = Query(...),
+    category: str = Query(default="outdoor"),
+    hour: int = Query(default=12),
+):
+    """선택한 장소 근처 다음 코스(식당/카페) 추천"""
+    try:
+        loop = asyncio.get_event_loop()
+        places = await loop.run_in_executor(
+            None,
+            lambda: fetch_next_places(lat, lng, category, hour)
+        )
+        return {"next_places": places}
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
